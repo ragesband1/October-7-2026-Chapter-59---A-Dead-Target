@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 59 - A Dead Target</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Military/Game Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .cyber-border {
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        .cyber-button {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+        }
+        .cyber-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        }
+        .cyber-button:active {
+            transform: translateY(1px);
+        }
+        .danger-button {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+        .danger-button:hover {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6);
+        }
+        canvas {
+            touch-action: none;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col select-none">
+
+    <header class="bg-slate-900 border-b border-slate-800 py-3 px-6 flex flex-wrap items-center justify-between shadow-lg relative z-20">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/50">
+                <i class="fa-solid fa-crosshairs text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-orbitron font-black text-xl text-sky-400 tracking-wider">CHAPTER 59: A DEAD TARGET</h1>
+                <p class="text-xs text-slate-400">From Anonymous Annihilation Targets & "The Rages Band"</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex items-center space-x-2 mt-2 md:mt-0 overflow-x-auto pb-1 md:pb-0">
+            <button onclick="switchTab('game')" id="tab-game" class="px-4 py-2 rounded-lg font-orbitron text-xs font-bold uppercase tracking-wider bg-sky-600 text-white shadow-md transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-gamepad"></i><span>Training & Combat</span>
+            </button>
+            <button onclick="switchTab('story')" id="tab-story" class="px-4 py-2 rounded-lg font-orbitron text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-book-open"></i><span>Lore & Full Story</span>
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="px-4 py-2 rounded-lg font-orbitron text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-chart-bar"></i><span>RPG & Skills</span>
+            </button>
+            <button onclick="switchTab('moral')" id="tab-moral" class="px-4 py-2 rounded-lg font-orbitron text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-scale-balanced"></i><span>Moral Lesson</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col relative overflow-hidden">
+
+        <!-- ================= VIEW 1: GAME / COMBAT ARENA ================= -->
+        <div id="view-game" class="flex-1 flex flex-col md:flex-row relative">
+            
+            <!-- Left Sidebar: HUD & Player Status -->
+            <div class="w-full md:w-80 bg-slate-900/90 border-r border-slate-800 p-4 flex flex-col justify-between space-y-4 z-10 backdrop-blur">
+                <div class="space-y-4">
+                    <!-- Player Card -->
+                    <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700 shadow-inner">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs uppercase font-orbitron text-sky-400 font-bold">Soldier Profile</span>
+                            <span id="player-class-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Lazy Learner</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg bg-slate-700 flex items-center justify-center border border-slate-600">
+                                <i class="fa-solid fa-user-shield text-2xl text-sky-400"></i>
+                            </div>
+                            <div>
+                                <h3 id="player-name-display" class="font-bold text-sm text-white">Segen (Trainee)</h3>
+                                <p class="text-xs text-slate-400">Level <span id="player-level">1</span> | Exp: <span id="player-exp">0</span>/100</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meters: Health, Conscience, Ammo -->
+                    <div class="space-y-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-red-400"><i class="fa-solid fa-heart"></i> Health</span>
+                                <span id="hp-text">100 / 100</span>
+                            </div>
+                            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                                <div id="hp-bar" class="bg-red-500 h-full transition-all duration-300" style="width: 100%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-sky-400"><i class="fa-solid fa-brain"></i> Conscience Meter</span>
+                                <span id="conscience-text">50%</span>
+                            </div>
+                            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                                <div id="conscience-bar" class="bg-sky-500 h-full transition-all duration-300" style="width: 50%"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-700 text-xs">
+                            <span class="text-slate-300 font-medium">Ammo: <strong id="ammo-count" class="text-amber-400 font-orbitron">12/12</strong></span>
+                            <button onclick="reloadGun()" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] uppercase font-bold text-slate-200 transition">
+                                <i class="fa-solid fa-rotate"></i> Reload
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mission Control & Objectives -->
+                    <div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                        <h4 class="font-orbitron text-xs font-bold text-sky-400 uppercase mb-2 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-bullseye"></i><span>Current Mission</span>
+                        </h4>
+                        <p id="mission-title" class="text-xs font-bold text-white mb-1">Phase 1: Mercenary Training</p>
+                        <p id="mission-desc" class="text-[11px] text-slate-300 leading-relaxed">Listen to Boss Rethro. Shoot cardboard enemies correctly! Avoid innocent targets to preserve your conscience.</p>
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Score: <strong id="game-score" class="text-emerald-400">0</strong></span>
+                            <span class="text-slate-400">Targets Hit: <strong id="targets-hit" class="text-sky-400">0/5</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Controls Footer -->
+                <div class="space-y-2">
+                    <button onclick="nextMissionPhase()" class="w-full py-2.5 px-4 cyber-button text-white rounded-lg font-orbitron text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2">
+                        <span>Advance Mission Phase</span> <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="resetGame()" class="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-orbitron text-[11px] font-bold uppercase tracking-wider transition">
+                        Reset Simulation
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center: Interactive Canvas / 2.5D Shooting Arena -->
+            <div class="flex-1 flex flex-col bg-slate-950 relative overflow-hidden items-center justify-center p-2 md:p-6">
+                <!-- Canvas Container -->
+                <div class="relative w-full max-w-4xl aspect-[16/10] bg-slate-900 rounded-2xl cyber-border overflow-hidden shadow-2xl flex flex-col">
+                    
+                    <!-- Top HUD inside canvas -->
+                    <div class="absolute top-3 left-3 right-3 z-10 flex justify-between items-center pointer-events-none">
+                        <div class="bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-orbitron text-sky-400 shadow">
+                            <span id="canvas-location-label">Mercenary Training Ground (Gethan)</span>
+                        </div>
+                        <div class="bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-orbitron text-amber-400 shadow">
+                            Boss Rethro: <span id="boss-status-label" class="text-emerald-400">Active</span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Canvas -->
+                    <canvas id="gameCanvas" class="w-full h-full cursor-crosshair bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950"></canvas>
+
+                    <!-- Crosshair / Instructions overlay at bottom -->
+                    <div class="absolute bottom-3 left-3 right-3 z-10 flex justify-between items-center bg-slate-900/80 backdrop-blur px-4 py-2 rounded-xl border border-slate-700 text-xs text-slate-300 pointer-events-none">
+                        <div class="flex items-center space-x-3">
+                            <span><i class="fa-solid fa-mouse text-sky-400"></i> Click/Tap targets to shoot</span>
+                            <span class="hidden md:inline">|</span>
+                            <span class="hidden md:inline text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> Avoid Innocent Cardboards!</span>
+                        </div>
+                        <div class="font-orbitron font-bold text-sky-400" id="canvas-timer">PHASE 1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: LORE & FULL STORY READER ================= -->
+        <div id="view-story" class="hidden flex-1 overflow-y-auto p-4 md:p-8 max-w-5xl mx-auto w-full space-y-8">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-10 shadow-2xl">
+                <div class="text-center border-b border-slate-800 pb-6 mb-6">
+                    <span class="text-xs uppercase font-orbitron text-sky-400 tracking-widest font-bold">Complete Narrative Experience</span>
+                    <h2 class="text-3xl md:text-4xl font-black font-orbitron text-white mt-2 mb-3">Chapter 59: Bedtime Stories</h2>
+                    <p class="text-sm text-slate-400">April 9, 2020 | A Dead Target — From the creations of Anonymous Annihilation Targets and “The Rages Band”</p>
+                </div>
+
+                <!-- Chapter 1 -->
+                <div class="space-y-6 text-slate-300 leading-relaxed">
+                    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/60">
+                        <h3 class="font-orbitron text-lg font-bold text-sky-400 mb-3 flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-full bg-sky-600/20 border border-sky-500 text-sky-400 flex items-center justify-center text-xs">1</span>
+                            <span>Chapter 1: Introduction To A Lazy Learner Soldier</span>
+                        </h3>
+                        <p class="text-sm md:text-base text-slate-300">
+                            Once upon a time in a place of a good example. This place is called a Mercenaries. Where the place is what the battalion soldiers are practicing to take a shot. And to kill criminals like an enemies. Suddenly there is a pride person came. His name is Segen and when the other battalion soldiers set their own centerpiece in a training. The boss came to train the battalion soldiers. Boss name is Rethro, a humble boss who trained the soldiers very well to not shot the innocent people. But only the criminals and enemies. To finish the politics around them.
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Boss Rethro said to those battalion soldiers in the Mercenary place: "To all battalion soldiers. You are having a challenge to face for. You must try to take a shot one by one. The challenge is to strike or shot and smash and enemy. With your real guns that recoil and then pushes through the enemy with the bullet hit in bad victims body for reaction time if it’s dead or not. So that to give justice to the innocent people who ever the criminals did to the innocent people. They need to take a challenge in order to stop the crisis in the politics because of a bad plan did."
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            But the thing is in a challenge and meaningful lesson, Segen don’t want to follow a lesson. He is too lazy to take a shots in the enemy and crimes without learning very well. Segen is so stupid that if he can’t shot very well. He might don’t give conscience on his mind. Then suddenly try to kills the innocent people without practice of concerns very well. Boss Rethro caught Segen loses attention and said, "Segen why are you supposed to train for! Is there something bothers you?" Segen said, "No! Boss Rethro because I am still active to participate on how my allies trying to stop the crimes. And save our world." Boss Rethro said, "Well that’s very good to hear that. Can I see what you made an example."
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Segen now starts to become profession in taking shots against the bad people. But the thing is, that is only the simple challenge. He wanted to strike the people in the cardboards just like other battalion soldiers did. But Segen wants to strike the cardboard only the bad people or just like the criminal or an enemy. Like also the battalion soldiers.
+                        </p>
+                    </div>
+
+                    <!-- Chapter 2 -->
+                    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/60">
+                        <h3 class="font-orbitron text-lg font-bold text-sky-400 mb-3 flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-full bg-sky-600/20 border border-sky-500 text-sky-400 flex items-center justify-center text-xs">2</span>
+                            <span>Chapter 2: Without Focus Of Learning Segen Kills Innocent People In Committing Lazy Learning Soldier</span>
+                        </h3>
+                        <p class="text-sm md:text-base text-slate-300">
+                            Did that time as they take a shot. They only kills the enemy and not innocent people in taking a shot within a cardboard. Suddenly after practicing, Segen fails to take a shot with it and shot the innocent people without focus in the past. Because he is lazy that time. So as the effect he didn’t kill the criminals but to put Segen in a bad and stupid lesson. Segen said, "Oh no I kill the innocent people with a card boards. How can I do to save them!"
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Boss Rethro see it and said, "You know Segen as I’ve seen what you’ve done. You are not a humble person. You know I’ve said to you that time you must learn how to fight the bad. But what did you do you still very lazy over and over again. Until 1 month and then now the effect of losing concentration in taking a shot. You don’t have now the conscience to fix this. You are now regret you must take out this place of Mercenary. Go! Segen and never come back! You waste your time becoming lazy without learning to stop the bad people."
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            As soon Segen now is walked out until the promise of Segen never forget what he done. As Boss Rethro is with the battalion soldiers. The mission now for the boss said, "You there in a place of mercenary. Are you ready for a quest?" Battalion soldiers said, "Yes we are." Boss Rethro said, "And in fact even Segen is not around with us now because of deceiving himself for pride. He left without learning to fight. But fighting the innocent people." Battalion soldiers said, "Ok I think Segen is the bad person. He don’t learn very well that’s why he don’t use his conscience. Mind it soldiers!" Then the battalion soldiers said, "Yes!"
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Boss Rethro said, "So now we can finished the crisis in politics. If we stopped criminals and enemies without the help of lazy Segen in yesterday whose been kicked out." Battalion soldiers said, "Yes we can do it by unity and faith to stopped the bad crisis." As Boss Rethro and battalion soldiers understand what they need to do tomorrow. The mission also must finished tomorrow to stopped the bad.
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            While Segen who quitted still never give up. And because of pride he handled his own gun. Then Segen saw when going home now he saw the stranger. The stranger wants to steal the bag to the aunt. When Segen saw it. He can remember what the Boss said that time. He can kill innocent people without learning. And put it with no conscience at all. Then suddenly Segen started now striking and recoiling a gun. Until the gun is pushes towards an aunt. Then when that is the death of an aunt. It saw by boss Rethro and then his past battalion soldiers. Segen fails his own mission. That the matter of Segen changed to him. Even Segen is good then his bad now. Because he kills innocent people.
+                        </p>
+                    </div>
+
+                    <!-- Chapter 3 -->
+                    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/60">
+                        <h3 class="font-orbitron text-lg font-bold text-sky-400 mb-3 flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-full bg-sky-600/20 border border-sky-500 text-sky-400 flex items-center justify-center text-xs">3</span>
+                            <span>Chapter 3: The Joining Forces Of A Boss, People And Battalion Soldiers Stopped The Turbulence Of Segen As Betrayer In Politics</span>
+                        </h3>
+                        <p class="text-sm md:text-base text-slate-300">
+                            And now the mission is the Boss and the battalion soldiers. Wants to betray Segen then it must killed together with the stranger they caught. So including Segen and stranger they are the last politics in this crime. Then now Segen run and run because he has now a fear to them. Than Segen saw the boss and battalion soldiers. Segen heard what they say about. He must run before he dies by taking him the shots by them.
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            As the story ends, because of laziness turn into a crime. People know also Segen when he killed an aunt. People now wanted to corner him and then suddenly cornered with. Together with Boss Rethro and his battalion soldiers. So including stranger and Segen don’t how where to go because they are been trapped in locked building with no house side by side. So what the thing is stranger including Segen is humbly surrendered his gun together with the stranger unarmed. Then now began to have a rest in peace to Segen and the stranger.
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Boss Rethro said, "To the final breath. You two the stranger and Segen. As this is now our last and final mission to do. Because no other criminals walked into this place of Gethan but you 2 only. Now people and even battalion soldiers. I command to strike them back. 1, 2, 3 Fire!!!"
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Then suddenly to the final breath of the 2, Segen and the stranger dies without been saying anything to save their lives. But typically they are now fatal. Now as the final mission has done. Boss Rethro including people and even battalion soldiers have brought peace in the place of Gethan. No more crimes that tries them suffered. Boss Rethro said, "People and battalion soldiers our mission is already successful. We defeat the laziness and the pride of Segen and even a stranger. Now I behold to put all of you humble. So that you must not become change and been bad. Because if you learn to save our world. You save us from danger."
+                        </p>
+                        <p class="text-sm md:text-base text-slate-300 mt-3">
+                            Boss Rethro now together with his allies like people is merged now. And turn to battalion soldiers. Because they want to be one of them and not been bad. Because of humility can saves them all with conscience.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: RPG STATS & SKILL TREE ================= -->
+        <div id="view-stats" class="hidden flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+                <h2 class="text-2xl font-black font-orbitron text-sky-400 mb-6 flex items-center space-x-3">
+                    <i class="fa-solid fa-chart-line"></i><span>RPG Progression & Skill Tree</span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700 space-y-4">
+                        <h3 class="font-orbitron font-bold text-white text-sm uppercase tracking-wider text-sky-300">Combat Statistics</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><span class="text-slate-400">Class Type:</span> <strong id="stat-class" class="text-amber-400">Lazy Learner (Segen)</strong></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Accuracy Rate:</span> <strong id="stat-accuracy" class="text-emerald-400">75%</strong></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Conscience Level:</span> <strong id="stat-conscience" class="text-sky-400">50 / 100</strong></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Enemies Defeated:</span> <strong id="stat-kills" class="text-white">0</strong></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Innocents Harmed:</span> <strong id="stat-harm" class="text-red-400">0</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700 space-y-4">
+                        <h3 class="font-orbitron font-bold text-white text-sm uppercase tracking-wider text-sky-300">Equipment & Inventory</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center justify-between p-2 bg-slate-900/60 rounded border border-slate-700">
+                                <span class="flex items-center space-x-2 text-slate-300"><i class="fa-solid fa-gun text-sky-400"></i><span>Standard Mercenary Rifle</span></span>
+                                <span class="text-xs bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded">Equipped</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-slate-900/60 rounded border border-slate-700">
+                                <span class="flex items-center space-x-2 text-slate-300"><i class="fa-solid fa-shield-halved text-amber-400"></i><span>Boss Rethro's Badge</span></span>
+                                <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Unlocked</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-slate-900/60 rounded border border-slate-700">
+                                <span class="flex items-center space-x-2 text-slate-300"><i class="fa-solid fa-book text-purple-400"></i><span>Moral Lesson Codex</span></span>
+                                <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700 space-y-4">
+                    <h3 class="font-orbitron font-bold text-white text-sm uppercase tracking-wider text-sky-300">Skill Tree: Humility vs Pride</h3>
+                    <p class="text-xs text-slate-400">Upgrade your soldier attributes by earning experience in training and missions.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="font-bold text-xs font-orbitron text-sky-400">1. Focus & Discipline</h4>
+                                <p class="text-[11px] text-slate-400 mt-1">Improves targeting stability and reduces recoil lag.</p>
+                            </div>
+                            <button onclick="upgradeSkill('focus')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded text-xs font-bold transition">Upgrade (Cost: 50 XP)</button>
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="font-bold text-xs font-orbitron text-sky-400">2. Conscience Radar</h4>
+                                <p class="text-[11px] text-slate-400 mt-1">Highlights innocent targets to prevent friendly fire.</p>
+                            </div>
+                            <button onclick="upgradeSkill('conscience')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded text-xs font-bold transition">Upgrade (Cost: 50 XP)</button>
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="font-bold text-xs font-orbitron text-sky-400">3. Boss Rethro's Blessing</h4>
+                                <p class="text-[11px] text-slate-400 mt-1">Grants ultimate humility shield against pride.</p>
+                            </div>
+                            <button onclick="upgradeSkill('blessing')" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition">Unlock (Cost: 100 XP)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: MORAL LESSON ================= -->
+        <div id="view-moral" class="hidden flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-10 shadow-2xl space-y-6">
+                <div class="text-center border-b border-slate-800 pb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500 text-amber-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid fa-scale-balanced text-3xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-black font-orbitron text-white">The Moral Lesson</h2>
+                    <p class="text-xs font-orbitron text-sky-400 uppercase tracking-widest mt-1">Chapter 59 Core Philosophy</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-slate-800/80 to-slate-900 p-6 md:p-8 rounded-xl border border-slate-700/80 shadow-inner space-y-4 text-slate-200 leading-relaxed text-sm md:text-base">
+                    <p>
+                        <strong>If a person wants to be concern to learn you well.</strong> Don’t be lazy because being lazy is the effect of pride. By changing itself then it discourage conscience of nothing know what to do. Or should we say turbulent or else the humble people will persecute or punish you for bad.
+                    </p>
+                    <p>
+                        Before it’s too late you must learn about it. So you will not be a coward that you didn’t know what to do. Be changed it’s humble so that you can save the world. By not killing but protecting one another by learning very well. And not pride of punishing because you don’t know and learned.
+                    </p>
+                    <p>
+                        Suddenly they want to hesitates you for not controlling your manners is good because you deceive improperly and indirect.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-800/40 p-5 rounded-xl border border-slate-700">
+                        <h4 class="font-orbitron font-bold text-sky-400 text-sm mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-circle-check"></i><span>Humility & Conscience</span>
+                        </h4>
+                        <p class="text-xs text-slate-300">
+                            Embracing humility under Boss Rethro means listening to instructions, protecting innocent lives, and maintaining moral clarity in times of political crisis.
+                        </p>
+                    </div>
+                    <div class="bg-slate-800/40 p-5 rounded-xl border border-slate-700">
+                        <h4 class="font-orbitron font-bold text-red-400 text-sm mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation"><span>Pride & Laziness</span></i>
+                        </h4>
+                        <p class="text-xs text-slate-300">
+                            Segen's downfall illustrates how laziness breeds pride, leading to reckless actions, friendly fire on innocents, and ultimate downfall in Gethan city.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Web Audio API Sound Synthesizer ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'shoot') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'hit') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'error') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.setValueAtTime(100, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'reload') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(700, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
+        }
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            ['game', 'story', 'stats', 'moral'].forEach(id => {
+                document.getElementById('view-' + id).classList.add('hidden');
+                document.getElementById('tab-' + id).classList.remove('bg-sky-600', 'text-white');
+                document.getElementById('tab-' + id).classList.add('bg-slate-800', 'text-slate-300');
+            });
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-' + tabId).classList.remove('bg-slate-800', 'text-slate-300');
+            document.getElementById('tab-' + tabId).classList.add('bg-sky-600', 'text-white');
+        }
+
+        // --- Game State Variables ---
+        let gameState = {
+            hp: 100,
+            maxHp: 100,
+            conscience: 50,
+            ammo: 12,
+            maxAmmo: 12,
+            level: 1,
+            exp: 0,
+            score: 0,
+            targetsHit: 0,
+            targetGoal: 5,
+            phase: 1,
+            kills: 0,
+            harm: 0,
+            classType: "Lazy Learner",
+            isReloading: false
+        };
+
+        // --- Canvas & Shooting Targets Engine ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let targets = [];
+        let particles = [];
+        let mouseX = 0;
+        let mouseY = 0;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function spawnTarget() {
+            const isEnemy = Math.random() > 0.35; // 65% chance enemy/criminal cardboard, 35% innocent aunt/cardboard
+            const radius = 35 + Math.random() * 15;
+            const x = radius + Math.random() * (canvas.width - radius * 2);
+            const y = radius + Math.random() * (canvas.height - radius * 2 - 40);
+            
+            targets.push({
+                x: x,
+                y: y,
+                radius: radius,
+                isEnemy: isEnemy,
+                opacity: 0,
+                maxOpacity: 1,
+                timer: 0,
+                duration: 180 // frames before fading
+            });
+        }
+
+        function initPhaseTargets() {
+            targets = [];
+            let count = gameState.phase === 1 ? 5 : gameState.phase === 2 ? 8 : 12;
+            gameState.targetGoal = count;
+            for (let i = 0; i < Math.min(count, 4); i++) {
+                spawnTarget();
+            }
+            updateHUD();
+        }
+
+        // Mouse & Touch click handlers
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            handleShoot(clickX, clickY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const clickX = touch.clientX - rect.left;
+            const clickY = touch.clientY - rect.top;
+            handleShoot(clickX, clickY);
+        });
+
+        function handleShoot(x, y) {
+            if (gameState.isReloading) return;
+            if (gameState.ammo <= 0) {
+                playSound('error');
+                showFloatingText("Out of Ammo! Reload!", x, y, "#ef4444");
+                return;
+            }
+
+            gameState.ammo--;
+            playSound('shoot');
+            createMuzzleFlash(x, y);
+
+            let hitIndex = -1;
+            for (let i = 0; i < targets.length; i++) {
+                const t = targets[i];
+                const dist = Math.hypot(t.x - x, t.y - y);
+                if (dist <= t.radius) {
+                    hitIndex = i;
+                    break;
+                }
+            }
+
+            if (hitIndex !== -1) {
+                const t = targets[hitIndex];
+                targets.splice(hitIndex, 1);
+
+                if (t.isEnemy) {
+                    playSound('hit');
+                    gameState.score += 100;
+                    gameState.targetsHit++;
+                    gameState.kills++;
+                    gameState.exp += 25;
+                    gameState.conscience = Math.min(100, gameState.conscience + 5);
+                    showFloatingText("+100 PTS (Enemy Neutralized)", x, y, "#34d399");
+                } else {
+                    playSound('error');
+                    gameState.score -= 150;
+                    gameState.hp = Math.max(0, gameState.hp - 20);
+                    gameState.harm++;
+                    gameState.conscience = Math.max(0, gameState.conscience - 25);
+                    showFloatingText("-20 HP (INNOCENT HARMED!)", x, y, "#ef4444");
+                }
+
+                // Spawn new target if needed
+                if (targets.length < 3 && gameState.targetsHit < gameState.targetGoal) {
+                    spawnTarget();
+                }
+
+                checkLevelUp();
+            } else {
+                showFloatingText("Missed!", x, y, "#94a3b8");
+            }
+
+            updateHUD();
+            if (gameState.targetsHit >= gameState.targetGoal) {
+                triggerPhaseComplete();
+            }
+        }
+
+        function reloadGun() {
+            if (gameState.isReloading || gameState.ammo === gameState.maxAmmo) return;
+            gameState.isReloading = true;
+            playSound('reload');
+            showFloatingText("Reloading...", canvas.width / 2, canvas.height / 2, "#38bdf8");
+            setTimeout(() => {
+                gameState.ammo = gameState.maxAmmo;
+                gameState.isReloading = false;
+                updateHUD();
+            }, 800);
+        }
+
+        let floatingTexts = [];
+        function showFloatingText(text, x, y, color) {
+            floatingTexts.push({ text, x, y, alpha: 1, color });
+        }
+
+        function createMuzzleFlash(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: 2 + Math.random() * 3,
+                    color: '#38bdf8',
+                    alpha: 1
+                });
+            }
+        }
+
+        function checkLevelUp() {
+            if (gameState.exp >= gameState.level * 100) {
+                gameState.level++;
+                gameState.exp = 0;
+                gameState.maxHp += 20;
+                gameState.hp = gameState.maxHp;
+                showFloatingText("LEVEL UP! Soldier Promoted!", canvas.width / 2, 50, "#fbbf24");
+                if (gameState.level >= 2) {
+                    gameState.classType = "Disciplined Soldier";
+                    document.getElementById('player-class-badge').innerText = "Disciplined Soldier";
+                    document.getElementById('player-class-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30";
+                }
+            }
+        }
+
+        function triggerPhaseComplete() {
+            gameState.phase++;
+            if (gameState.phase > 3) {
+                gameState.phase = 3;
+                showFloatingText("Mission Complete! Peace restored in Gethan!", canvas.width / 2, canvas.height / 2, "#34d399");
+                document.getElementById('mission-title').innerText = "Final Mission Accomplished";
+                document.getElementById('mission-desc').innerText = "Boss Rethro and battalion soldiers brought peace to Gethan. Segen and stranger surrendered.";
+            } else {
+                document.getElementById('mission-title').innerText = `Phase ${gameState.phase}: Gethan Crisis`;
+                document.getElementById('mission-desc').innerText = gameState.phase === 2 ? "Combat training with stranger and innocent aunt encounter." : "Final showdown: Cornered building in Gethan.";
+                document.getElementById('canvas-location-label').innerText = gameState.phase === 2 ? "Gethan City Streets" : "Locked Building Trapped Area";
+                initPhaseTargets();
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('player-level').innerText = gameState.level;
+            document.getElementById('player-exp').innerText = gameState.exp;
+            document.getElementById('hp-text').innerText = `${gameState.hp} / ${gameState.maxHp}`;
+            document.getElementById('hp-bar').style.width = `${(gameState.hp / gameState.maxHp) * 100}%`;
+            document.getElementById('conscience-text').innerText = `${gameState.conscience}%`;
+            document.getElementById('conscience-bar').style.width = `${gameState.conscience}%`;
+            document.getElementById('ammo-count').innerText = `${gameState.ammo}/${gameState.maxAmmo}`;
+            document.getElementById('game-score').innerText = gameState.score;
+            document.getElementById('targets-hit').innerText = `${gameState.targetsHit}/${gameState.targetGoal}`;
+            document.getElementById('canvas-timer').innerText = `PHASE ${gameState.phase}`;
+
+            // Stats tab updates
+            document.getElementById('stat-class').innerText = gameState.classType;
+            document.getElementById('stat-accuracy').innerText = `${Math.round((gameState.targetsHit / Math.max(1, gameState.targetsHit + gameState.harm)) * 100)}%`;
+            document.getElementById('stat-conscience').innerText = `${gameState.conscience} / 100`;
+            document.getElementById('stat-kills').innerText = gameState.kills;
+            document.getElementById('stat-harm').innerText = gameState.harm;
+        }
+
+        function nextMissionPhase() {
+            triggerPhaseComplete();
+        }
+
+        function resetGame() {
+            gameState.hp = 100;
+            gameState.maxHp = 100;
+            gameState.conscience = 50;
+            gameState.ammo = 12;
+            gameState.level = 1;
+            gameState.exp = 0;
+            gameState.score = 0;
+            gameState.targetsHit = 0;
+            gameState.phase = 1;
+            gameState.kills = 0;
+            gameState.harm = 0;
+            gameState.classType = "Lazy Learner";
+            document.getElementById('player-class-badge').innerText = "Lazy Learner";
+            document.getElementById('player-class-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+            document.getElementById('mission-title').innerText = "Phase 1: Mercenary Training";
+            document.getElementById('mission-desc').innerText = "Listen to Boss Rethro. Shoot cardboard enemies correctly! Avoid innocent targets to preserve your conscience.";
+            document.getElementById('canvas-location-label').innerText = "Mercenary Training Ground (Gethan)";
+            initPhaseTargets();
+            updateHUD();
+        }
+
+        function upgradeSkill(type) {
+            if (gameState.exp >= 50) {
+                gameState.exp -= 50;
+                playSound('hit');
+                showFloatingText("Skill Upgraded Successfully!", canvas.width / 2, canvas.height / 2, "#34d399");
+                updateHUD();
+            } else {
+                playSound('error');
+                showFloatingText("Not enough XP (Need 50 XP)", canvas.width / 2, canvas.height / 2, "#ef4444");
+            }
+        }
+
+        // --- Main Game Loop ---
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid background for cyberpunk military feel
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw targets
+            targets.forEach(t => {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+                if (t.isEnemy) {
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fill();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#ef4444'; // Red for enemy criminal cardboard
+                    ctx.stroke();
+
+                    // Inner crosshair
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = 'bold 12px Orbitron';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('ENEMY', t.x, t.y + 4);
+                } else {
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fill();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#38bdf8'; // Blue for innocent cardboard
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = 'bold 12px Orbitron';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('INNOCENT', t.x, t.y + 4);
+                }
+                ctx.restore();
+            });
+
+            // Draw particles
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                    return;
+                }
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Draw floating texts
+            floatingTexts.forEach((ft, index) => {
+                ft.y -= 1;
+                ft.alpha -= 0.015;
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(index, 1);
+                    return;
+                }
+                ctx.save();
+                ctx.globalAlpha = ft.alpha;
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 14px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize targets and start loop on load
+        window.onload = function() {
+            resizeCanvas();
+            initPhaseTargets();
+            updateHUD();
+            gameLoop();
+        };
+    </script>
+
+</body>
+</html>
